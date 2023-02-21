@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>UP Diliman Jeepneys</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+	mapboxgl.accessToken = 'pk.eyJ1IjoidXByaS1ub2FoIiwiYSI6ImNrcmExaDdydzRldWYyb21udmw1ejY3ZDYifQ.cs3Ahz2S6fERoI1BAwFO9g';
+    const map = new mapboxgl.Map({
+        container: 'map', // container ID
+        // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+        style: 'mapbox://styles/mapbox/dark-v11', // style URL
+        center: [121.0644997,14.6549182], // starting position [lng, lat]
+        zoom: 15 // starting zoom
+    });
+
+    const geojson = {
+        'type': 'FeatureCollection',
+        'features': [
+            {
+                'type': 'Feature',
+                "properties": { "id": null },
+                "geometry": { 
+                    "type": "MultiLineString", 
+                    "coordinates": [ [ [ 121.064286117381712, 14.647675944814317 ], [ 121.064970586696262, 14.647706592694073 ], [ 121.065746999650074, 14.647951775732121 ], [ 121.066227149766263, 14.647972207651957 ], [ 121.067218097878367, 14.647532921375454 ], [ 121.067841271433409, 14.647277522377488 ], [ 121.069005890864133, 14.647206010658056 ], [ 121.068985458944297, 14.648207174730087 ], [ 121.068954811064543, 14.64896315576407 ], [ 121.068842435505445, 14.649259418601712 ], [ 121.068668764186825, 14.649749784677809 ], [ 121.068403149228956, 14.650679437030409 ], [ 121.068474660948397, 14.651476281904067 ], [ 121.068576820547577, 14.652007511819837 ], [ 121.068658548226935, 14.652497877895934 ], [ 121.070742604050338, 14.65251830981577 ], [ 121.070701740210666, 14.653897464404793 ], [ 121.071784631962046, 14.653907680364711 ], [ 121.072765364114233, 14.653968976124224 ], [ 121.073153570591145, 14.654633013518938 ], [ 121.073112706751473, 14.655521802031863 ], [ 121.073112706751473, 14.655746553150074 ], [ 121.072744932194396, 14.656175623466659 ], [ 121.072755148154314, 14.657554778055681 ], [ 121.072690583264219, 14.659459646101801 ], [ 121.069565797089297, 14.659448610953447 ], [ 121.068563437780696, 14.659421023082569 ], [ 121.068565534509091, 14.657551190068096 ], [ 121.064784413281387, 14.657565369920507 ], [ 121.063658155020121, 14.657694824893065 ], [ 121.062370078043173, 14.657688352144438 ], [ 121.062337714300028, 14.656775694587903 ], [ 121.062329065988678, 14.654991948904904 ], [ 121.0623323150473, 14.653864262535059 ], [ 121.062319885629407, 14.652149002864713 ], [ 121.0623323150473, 14.650607755044982 ], [ 121.062344744465207, 14.648519612837603 ], [ 121.062307456211499, 14.647525259405519 ], [ 121.062319885629378, 14.647351247554905 ], [ 121.063450962658379, 14.647637124166629 ], [ 121.064134580642943, 14.647674412420333 ], [ 121.064251567837971, 14.647676928885215 ], [ 121.064285819414863, 14.647675811985968 ] ] ] 
+                }
+            }
+        ]
+    };
+
+    map.on('load', () => {
+        map.addSource('line', {
+            type: 'geojson',
+            data: geojson
+        });
+
+        // add a line layer without line-dasharray defined to fill the gaps in the dashed line
+        map.addLayer({
+            type: 'line',
+            source: 'line',
+            id: 'line-background',
+            paint: {
+                'line-color': 'yellow',
+                'line-width': 6,
+                'line-opacity': 0.4
+            }
+        });
+
+        // add a line layer with line-dasharray set to the first value in dashArraySequence
+        map.addLayer({
+            type: 'line',
+            source: 'line',
+            id: 'line-dashed',
+            paint: {
+                'line-color': 'yellow',
+                'line-width': 6,
+                'line-dasharray': [0, 4, 3]
+            }
+        });
+
+        // technique based on https://jsfiddle.net/2mws8y3q/
+        // an array of valid line-dasharray values, specifying the lengths of the alternating dashes and gaps that form the dash pattern
+        const dashArraySequence = [
+            [0, 4, 3],
+            [0.5, 4, 2.5],
+            [1, 4, 2],
+            [1.5, 4, 1.5],
+            [2, 4, 1],
+            [2.5, 4, 0.5],
+            [3, 4, 0],
+            [0, 0.5, 3, 3.5],
+            [0, 1, 3, 3],
+            [0, 1.5, 3, 2.5],
+            [0, 2, 3, 2],
+            [0, 2.5, 3, 1.5],
+            [0, 3, 3, 1],
+            [0, 3.5, 3, 0.5]
+        ];
+
+        let step = 0;
+
+        function animateDashArray(timestamp) {
+            // Update line-dasharray using the next value in dashArraySequence. The
+            // divisor in the expression `timestamp / 50` controls the animation speed.
+            const newStep = parseInt(
+                (timestamp / 50) % dashArraySequence.length
+            );
+
+            if (newStep !== step) {
+                map.setPaintProperty(
+                    'line-dashed',
+                    'line-dasharray',
+                    dashArraySequence[step]
+                );
+                step = newStep;
+            }
+
+            // Request the next frame of the animation.
+            requestAnimationFrame(animateDashArray);
+        }
+
+        // start the animation
+        animateDashArray(0);
+    });
+</script>
+
+</body>
+</html>
